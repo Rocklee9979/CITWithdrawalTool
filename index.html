@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIT Withdrawal Code Decision Tool</title>
+  <style>
+    :root {
+      --primary: #007b8a;
+      --primary-dark: #005a66;
+      --secondary: #e6f4f5;
+      --accent: #d9534f;
+      --warning: #f0ad4e;
+      --success: #5cb85c;
+      --text: #2c3e50;
+      --bg: #f8fafb;
+      --card-bg: #ffffff;
+      --border: #dcdfe3;
+    }
+
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+    .container { max-width: 900px; margin: 0 auto; }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 24px;
+      border-radius: 10px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    header h1 { margin: 0 0 6px 0; font-size: 24px; }
+    header p { margin: 0; opacity: 0.9; font-size: 14px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    h2 { font-size: 17px; margin-top: 0; margin-bottom: 16px; border-bottom: 2px solid var(--secondary); padding-bottom: 8px; color: var(--primary-dark); }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+    select, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: white;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    select:focus { border-color: var(--primary); }
+
+    .help-hint { font-size: 11px; color: #6c757d; margin-top: 4px; display: block; }
+
+    /* Results section */
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 12px;
+    }
+    .badge-wb { background-color: #28a745; }
+    .badge-wa { background-color: #fd7e14; }
+    .badge-wd { background-color: #dc3545; }
+    .badge-un { background-color: #6f42c1; }
+    .badge-ef { background-color: #17a2b8; }
+    .badge-stop { background-color: #e63946; }
+
+    .result-box {
+      background: var(--secondary);
+      border-left: 4px solid var(--primary);
+      padding: 14px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+    .result-box h3 { margin: 0 0 4px 0; font-size: 15px; color: var(--primary-dark); }
+    .result-box p { margin: 0; font-size: 13px; line-height: 1.4; }
+
+    .checklist { font-size: 13px; padding-left: 18px; line-height: 1.6; }
+    .tag { background: #eee; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 12px; }
+
+    .copy-box {
+      background: #f1f3f5;
+      border: 1px dashed #ced4da;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>CIT Withdrawal Code Decision Tool</h1>
+    <p>Guides staff to the correct Banner Registration Status Code & CRM Hotkey (FAQ #2379)</p>
+  </header>
+
+  <div class="grid">
+    <!-- INPUT FORM -->
+    <div class="card">
+      <h2>Enrolment Details</h2>
+
+      <div class="form-group">
+        <label for="cohort">1. Student Cohort / Enrolment Type</label>
+        <select id="cohort" onchange="evaluateForm()">
+          <option value="standard">Standard Domestic (CIT Enrolled)</option>
+          <option value="apprentice">Apprentice / Trainee (Attr in SGASADD)</option>
+          <option value="fft_sc">Fee Free TAFE (FFT) / Skilled Capital</option>
+          <option value="international">CIT International Student</option>
+        </select>
+        <span class="help-hint">Check SGASADD for attributes</span>
+      </div>
+
+      <div class="form-group" id="swapGroup">
+        <label for="actionType">2. Type of Request</label>
+        <select id="actionType" onchange="evaluateForm()">
+          <option value="withdrawal">Course / Unit Withdrawal</option>
+          <option value="class_swap">Changing Class Times (Same Subject / CRN Swap)</option>
+          <option value="admin_fix">Deleting from Block Code / Admin Registration Error</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="gradeGroup">
+        <label for="grades">3. Grades Status (Check SFARHST / SFASLST)</label>
+        <select id="grades" onchange="evaluateForm()">
+          <option value="no_grade">No positive grades / In-progress or negative only</option>
+          <option value="positive_rolled">Positive Grade (UP) - Grade Rolled (✓ Ticked)</option>
+          <option value="positive_unrolled">Positive Grade (UP) - Grade NOT Rolled (✓ Missing)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="timingGroup">
+        <label for="timing">4. Withdrawal Timing</label>
+        <select id="timing" onchange="evaluateForm()">
+          <option value="10plus_or_before_due">10+ working days before class starts OR on/before Invoice/Census date</option>
+          <option value="within_10_days">Within 10 working days BEFORE class starts</option>
+          <option value="after_due_commenced">AFTER Fee Due/Census Date AND class has commenced</option>
+        </select>
+        <span class="help-hint">Based on the date student requested withdrawal in writing</span>
+      </div>
+
+      <div class="form-group" id="paymentGroup">
+        <label for="payment">5. Payment Status (Student Statement TWRT006)</label>
+        <select id="payment" onchange="evaluateForm()">
+          <option value="paid">Fully Paid</option>
+          <option value="unpaid">Unpaid / Outstanding Balance</option>
+          <option value="plan">On an Active Payment Plan</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="levelGroup">
+        <label for="level">6. Qualification Level</label>
+        <select id="level" onchange="evaluateForm()">
+          <option value="cert4">Statement of Attainment up to Certificate IV (Non-VSL)</option>
+          <option value="diploma">Diploma / Advanced Diploma (VSL / FEE-HELP)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- OUTPUT CARD -->
+    <div class="card">
+      <h2>Recommended Action</h2>
+      <div id="badgeContainer"></div>
+      
+      <div class="result-box">
+        <h3 id="resultTitle">Result</h3>
+        <p id="resultDescription">Fill out the details on the left to determine the correct Banner code.</p>
+      </div>
+
+      <div id="hotkeyBox" class="result-box" style="display:none; background: #eef2f7;">
+        <h3>CRM Standard Text / Hotkey</h3>
+        <p id="hotkeyText"></p>
+      </div>
+
+      <div id="instructionsBox">
+        <h3 style="font-size: 14px; margin-bottom: 8px;">Action Checklist:</h3>
+        <ol class="checklist" id="checklistItems"></ol>
+      </div>
+
+      <div id="bannerChatTemplate" style="display:none;">
+        <label>Banner AR Webex Chat Template:</label>
+        <div class="copy-box" id="copyBoxText"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function evaluateForm() {
+  const cohort = document.getElementById('cohort').value;
+  const actionType = document.getElementById('actionType').value;
+  const grades = document.getElementById('grades').value;
+  const timing = document.getElementById('timing').value;
+  const payment = document.getElementById('payment').value;
+  const level = document.getElementById('level').value;
+
+  const badgeContainer = document.getElementById('badgeContainer');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultDescription = document.getElementById('resultDescription');
+  const hotkeyBox = document.getElementById('hotkeyBox');
+  const hotkeyText = document.getElementById('hotkeyText');
+  const checklist = document.getElementById('checklistItems');
+  const bannerChatTemplate = document.getElementById('bannerChatTemplate');
+  const copyBoxText = document.getElementById('copyBoxText');
+
+  // Reset display
+  hotkeyBox.style.display = 'none';
+  bannerChatTemplate.style.display = 'none';
+  checklist.innerHTML = '';
+
+  // 1. HARD STOP: CIT International
+  if (cohort === 'international') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">STOP: International Student</span>';
+    resultTitle.textContent = 'Do not process via domestic form';
+    resultDescription.textContent = 'CIT International students cannot withdraw using standard domestic processes. They must complete the withdrawal form on the CIT International website or contact isadvisors@cit.edu.au.';
+    checklist.innerHTML = `
+      <li>Do not update codes in SFAREGS.</li>
+      <li>Forward enquiry/incident to CIT International Advisors.</li>
+    `;
+    return;
+  }
+
+  // 2. HARD STOP: Fee Free TAFE / Skilled Capital
+  if (cohort === 'fft_sc') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">STOP: Reassign to FFT Processing</span>';
+    resultTitle.textContent = 'Do not action in Student Services (Code: US)';
+    resultDescription.textContent = 'Fee Free TAFE and Skilled Capital withdrawals must be processed directly by the FFT/Skilled Capital team to notify departments and update AVETARS. Code "US" is used exclusively by them.';
+    checklist.innerHTML = `
+      <li>Reassign CRM incident to the <strong>'FFT Processing'</strong> contact record.</li>
+      <li>No Banner registration changes required by Student Services staff.</li>
+    `;
+    return;
+  }
+
+  // 3. Class Swap or Error Fix
+  if (actionType === 'class_swap' || actionType === 'admin_fix') {
+    badgeContainer.innerHTML = '<span class="badge badge-ef">Banner Code: EF</span>';
+    resultTitle.textContent = 'Error Fix / Admin Change';
+    resultDescription.textContent = 'Used for student changing class times (same subject) or deleting CRNs from a block code. Reverses fees and allows re-enrolment.';
+    checklist.innerHTML = `
+      <li>Open SFAREGS and update CRN status to <span class="tag">EF</span>.</li>
+      <li>Save until "Fee Assessment processed" appears.</li>
+      <li>Open TSASPAY > TSAAREV and select 'Apply Transactions'.</li>
+      <li>Re-enrol student into the new CRN.</li>
+    `;
+    return;
+  }
+
+  // 4. Grades Check - Positive Grade Waiting to be rolled
+  if (grades === 'positive_unrolled') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">STOP: Positive Grade Not Rolled</span>';
+    resultTitle.textContent = 'Do not withdraw student';
+    resultDescription.textContent = 'There is a UP grade in SFARHST/SFASLST with the rolled checkmark (✓) missing. The subject will not appear on official results if withdrawn now.';
+    checklist.innerHTML = `
+      <li>Contact the teaching department immediately and request them to roll the grades.</li>
+      <li>Wait until the grade is rolled before proceeding with any withdrawal.</li>
+    `;
+    return;
+  }
+
+  // 5. Grades Check - Positive Grade Rolled
+  if (grades === 'positive_rolled') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">NO WITHDRAWAL: Subject Completed</span>';
+    resultTitle.textContent = 'Positive Grade Rolled (UP)';
+    resultDescription.textContent = 'Student has completed assessment and the teacher has awarded a positive grade. The student cannot be withdrawn from this CRN.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Processed (Positive Grades)</strong> / Hotkey: <span class="tag">WPPG</span>';
+    
+    if (payment === 'unpaid') {
+      checklist.innerHTML = `
+        <li>Do not withdraw in Banner.</li>
+        <li>Place an Academic Hold (<span class="tag">AH</span>) on the student account.</li>
+        <li>Student remains liable for fees for this subject.</li>
+        <li>Respond in CRM using hotkey <span class="tag">WPPG</span>.</li>
+      `;
+    } else {
+      checklist.innerHTML = `
+        <li>Do not withdraw in Banner. Student retains grade.</li>
+        <li>Respond in CRM explaining the grade has been finalized.</li>
+      `;
+    }
+    return;
+  }
+
+  // 6. Early Withdrawal: >= 10 Days Before OR Before Invoice/Census Date
+  if (timing === '10plus_or_before_due') {
+    badgeContainer.innerHTML = '<span class="badge badge-wb">Banner Code: WB (100% Refund)</span>';
+    resultTitle.textContent = 'Withdraw BEFORE Due Date / 10+ Days Before Start';
+    resultDescription.textContent = 'Reverses subject fees and removes the subject from the timetable. 100% fee reversal applies.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, 10+ Days Before</strong> / Hotkey: <span class="tag">WB</span>';
+    checklist.innerHTML = `
+      <li>Open SFAREGS and change CRN status to <span class="tag">WB</span>.</li>
+      <li>Save (F10) until "Fee Assessment processed" displays.</li>
+      <li>Open TSASPAY > TSAAREV > Tools > <strong>Apply Transactions</strong>.</li>
+      <li>Check student statement to confirm fees reversed.</li>
+      ${cohort === 'apprentice' ? '<li><strong>Apprentice:</strong> Add private note hotkey <span class="tag">WPA</span> and reassign CRM incident to CIT Apprenticeships and Traineeships team.</li>' : ''}
+    `;
+    return;
+  }
+
+  // 7. Early Withdrawal: Within 10 working days BEFORE commencement
+  if (timing === 'within_10_days') {
+    badgeContainer.innerHTML = '<span class="badge badge-wb" style="background:#e07a1f;">Banner Code: WB (50% Refund Adjustment)</span>';
+    resultTitle.textContent = 'Withdraw within 10 Days of Commencement';
+    resultDescription.textContent = 'Student is WB\'d in SFAREGS. Under the 2025 Fee Policy, student is eligible for a 50% refund/credit. Banner AR must manually adjust the reversal by 50%.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Within 10 Days</strong> / Hotkey: <span class="tag">WW10</span>';
+    bannerChatTemplate.style.display = 'block';
+    copyBoxText.textContent = "Hi Team, can you please adjust the fee reversal by 50% as student CIT[ID] [Name] has withdrawn within 10 working days of class commencement.";
+    checklist.innerHTML = `
+      <li>Process code <span class="tag">WB</span> in SFAREGS.</li>
+      <li>Run TSASPAY > TSAAREV > Apply Transactions.</li>
+      <li>Post in the <strong>Finance and Student Services Webex chat</strong> (or reassign CRM incident to Banner AR) using template below.</li>
+      <li>Action student refund procedure if applicable.</li>
+      ${cohort === 'apprentice' ? '<li><strong>Apprentice:</strong> Add private note <span class="tag">WPA</span> and reassign CRM record to CAT team.</li>' : ''}
+    `;
+    return;
+  }
+
+  // 8. AFTER Due Date & Commenced: UNPAID
+  if (timing === 'after_due_commenced' && payment === 'unpaid') {
+    badgeContainer.innerHTML = '<span class="badge badge-un">Banner Code: UN</span>';
+    resultTitle.textContent = 'Un-Enrolment (After Due Date - Unpaid)';
+    resultDescription.textContent = 'Processed as an enrolment cancellation to remove fees and return student account to a $0 balance.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Processed (After FDD Unpaid)</strong> / Hotkey: <span class="tag">WUN</span>';
+    checklist.innerHTML = `
+      <li>Request Banner AR lift the Accounts Receivable (<span class="tag">AR</span>) hold via Webex chat if active.</li>
+      <li>In SFAREGS, set status to <span class="tag">UN</span> for commenced unpaid CRNs. (Use <span class="tag">WB</span> for any future CRNs 10+ days away).</li>
+      <li>Apply transactions in TSAAREV. Confirm account balance is $0.</li>
+      <li>Send hotkey <span class="tag">WUN</span> in CRM.</li>
+      ${cohort === 'apprentice' ? '<li><strong>Apprentice:</strong> Add private note <span class="tag">WPA</span> and reassign to CAT team.</li>' : ''}
+    `;
+    return;
+  }
+
+  // 9. AFTER Due Date & Commenced: PAID IN FULL
+  if (timing === 'after_due_commenced' && payment === 'paid') {
+    if (level === 'cert4') {
+      badgeContainer.innerHTML = '<span class="badge badge-wa">Banner Code: WA</span>';
+      resultTitle.textContent = 'Withdraw AFTER Fee Due Date (Up to Cert IV)';
+      resultDescription.textContent = 'For fully paid CRNs up to Certificate IV. Does NOT reverse subject fees and does not remove subject from timetable.';
+      checklist.innerHTML = `
+        <li>Request Banner AR lift active AR hold via Webex chat if present.</li>
+        <li>In SFAREGS, change status to <span class="tag">WA</span>.</li>
+        <li>Apply transactions in TSAAREV. Fees remain payable/paid.</li>
+        <li>Advise student they may submit a Fee Re-credit/Refund request if exceptional circumstances apply.</li>
+        ${cohort === 'apprentice' ? '<li><strong>Apprentice:</strong> Tag note <span class="tag">WPA</span> and reassign to CAT team.</li>' : ''}
+      `;
+    } else {
+      badgeContainer.innerHTML = '<span class="badge badge-wd">Banner Code: WD</span>';
+      resultTitle.textContent = 'Withdraw AFTER Census Date (Diploma & Above)';
+      resultDescription.textContent = 'Must use WD for VET Student Loan / FEE-HELP eligible courses to prevent reporting compliance errors. Does NOT reverse fees/loans.';
+      checklist.innerHTML = `
+        <li>Request Banner AR lift AR hold via Webex chat if present.</li>
+        <li>In SFAREGS, change status to <span class="tag">WD</span>.</li>
+        <li>Apply transactions in TSAAREV.</li>
+        <li>Advise student on VSL fee re-credit application procedures if applicable.</li>
+      `;
+    }
+    return;
+  }
+
+  // 10. AFTER Due Date: Active Payment Plan
+  if (timing === 'after_due_commenced' && payment === 'plan') {
+    badgeContainer.innerHTML = '<span class="badge badge-un">Banner Code: Split (WA/WD + UN)</span>';
+    resultTitle.textContent = 'Withdrawal on Payment Plan';
+    resultDescription.textContent = 'Units covered by payments made are withdrawn as WA (Cert IV) or WD (Diploma). Remaining unpaid units are cancelled with UN.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Processed (Partial w/ PP)</strong> / Hotkey: <span class="tag">WPP</span>';
+    checklist.innerHTML = `
+      <li>Calculate total fees paid against enrolled units.</li>
+      <li>For units covered by amount paid: Set to <span class="tag">WA</span> or <span class="tag">WD</span>.</li>
+      <li>For remaining unpaid units without positive grades: Set to <span class="tag">UN</span>.</li>
+      <li>Request Banner AR reverse old payment plan and establish revised plan via Webex chat.</li>
+      <li><strong>If student balance is now $0:</strong> Manually lift the <span class="tag">AH Hold</span> in <strong>SOAHOLD</strong> by entering today\'s date in the "To" field.</li>
+    `;
+    return;
+  }
+}
+
+// Initial calculation on load
+evaluateForm();
+</script>
+
+</body>
+</html>
