@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIT Withdrawal Code Decision Tool</title>
+  <style>
+    :root {
+      --primary: #007b8a;
+      --primary-dark: #005a66;
+      --secondary: #e6f4f5;
+      --accent: #d9534f;
+      --warning: #f0ad4e;
+      --success: #28a745;
+      --text: #2c3e50;
+      --bg: #f4f7f9;
+      --card-bg: #ffffff;
+      --border: #dcdfe3;
+    }
+
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+    .container { max-width: 980px; margin: 0 auto; }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 22px 28px;
+      border-radius: 10px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    header h1 { margin: 0 0 6px 0; font-size: 24px; }
+    header p { margin: 0; opacity: 0.9; font-size: 13px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card-bg);
+      padding: 22px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    h2 { font-size: 16px; margin-top: 0; margin-bottom: 16px; border-bottom: 2px solid var(--secondary); padding-bottom: 8px; color: var(--primary-dark); }
+    h3 { margin-top: 0; font-size: 15px; }
+
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 5px; }
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: white;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    select:focus, input:focus { border-color: var(--primary); }
+    .help-hint { font-size: 11px; color: #6c757d; margin-top: 4px; display: block; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 12px;
+    }
+    .badge-wb { background-color: var(--success); }
+    .badge-wa { background-color: #fd7e14; }
+    .badge-wd { background-color: #dc3545; }
+    .badge-un { background-color: #6f42c1; }
+    .badge-ef { background-color: #17a2b8; }
+    .badge-stop { background-color: #e63946; }
+
+    .result-box {
+      background: var(--secondary);
+      border-left: 4px solid var(--primary);
+      padding: 14px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+    .result-box p { margin: 0; font-size: 13px; line-height: 1.45; }
+
+    .checklist { font-size: 13px; padding-left: 18px; line-height: 1.6; margin: 8px 0; }
+    .checklist li { margin-bottom: 4px; }
+    .tag { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 12px; }
+
+    .copy-box {
+      background: #f1f3f5;
+      border: 1px dashed #ced4da;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* Accordion / Expandable Panel */
+    .accordion {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      overflow: hidden;
+      margin-top: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .accordion-header {
+      background: #fdfdfe;
+      padding: 16px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      color: var(--primary-dark);
+      border-bottom: 1px solid transparent;
+      transition: background 0.2s;
+    }
+    .accordion-header:hover { background: var(--secondary); }
+    .accordion-header.active {
+      border-bottom-color: var(--border);
+      background: var(--secondary);
+    }
+    .accordion-content {
+      padding: 22px;
+      display: none;
+    }
+    .accordion-content.open { display: block; }
+    .arrow-icon { transition: transform 0.2s; font-size: 12px; }
+    .arrow-icon.open { transform: rotate(180deg); }
+
+    /* Tables */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    table.data-table th { background-color: #f1f5f8; font-weight: 600; }
+    table.data-table tr:hover { background-color: #fafbfc; }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-outline { background: white; border: 1px solid var(--border); color: #495057; }
+    .btn-outline:hover { background: #f8f9fa; }
+    .btn-danger { background: #dc3545; color: white; padding: 4px 8px; font-size: 11px; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    .preset-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+      background: #f8f9fa;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px dashed var(--border);
+    }
+    .preset-bar span { font-size: 12px; font-weight: 600; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .summary-card {
+      background: #fdfdfe;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 6px;
+    }
+    .summary-card .label { font-size: 11px; color: #6c757d; text-transform: uppercase; font-weight: 600; }
+    .summary-card .val { font-size: 18px; font-weight: 700; color: var(--primary-dark); margin-top: 4px; }
+
+    .alert {
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin: 12px 0;
+      line-height: 1.45;
+    }
+    .alert-info { background: #e7f3fe; border-left: 4px solid #2196f3; color: #0c5460; }
+    .alert-warning { background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; }
+    .alert-success { background: #d4edda; border-left: 4px solid #28a745; color: #155724; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>CIT Withdrawal Code Decision Tool</h1>
+    <p>Guides staff to the correct Banner Registration Status Code & CRM Hotkey</p>
+  </header>
+
+  <!-- TOP LEVEL CRITERIA GRID -->
+  <div class="grid">
+    <div class="card">
+      <h2>1. Student & Enrolment Criteria</h2>
+
+      <div class="form-group">
+        <label for="cohort">Student Cohort / Enrolment Type</label>
+        <select id="cohort" onchange="evaluateMain()">
+          <option value="standard">Standard Domestic (CIT Enrolled)</option>
+          <option value="apprentice">Apprentice / Trainee (Attr in SGASADD)</option>
+          <option value="fft_sc">Fee Free TAFE (FFT) / Skilled Capital</option>
+          <option value="international">CIT International Student</option>
+        </select>
+        <span class="help-hint">Check SGASADD for attributes</span>
+      </div>
+
+      <div class="form-group">
+        <label for="actionType">Type of Request</label>
+        <select id="actionType" onchange="evaluateMain()">
+          <option value="withdrawal">Course / Unit Withdrawal</option>
+          <option value="class_swap">Changing Class Times (Same Subject / CRN Swap)</option>
+          <option value="admin_fix">Deleting from Block Code / Admin Registration Error</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="grades">Grades Status (Check SFARHST / SFASLST)</label>
+        <select id="grades" onchange="evaluateMain()">
+          <option value="no_grade">No positive grades / In-progress or negative only</option>
+          <option value="positive_rolled">Positive Grade (UP) - Grade Rolled (✓ Ticked)</option>
+          <option value="positive_unrolled">Positive Grade (UP) - Grade NOT Rolled (✓ Missing)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="timing">Withdrawal Timing</label>
+        <select id="timing" onchange="evaluateMain()">
+          <option value="after_due_commenced">AFTER Fee Due/Census Date AND class has commenced</option>
+          <option value="10plus_or_before_due">10+ working days before class starts OR on/before Invoice/Census date</option>
+          <option value="within_10_days">Within 10 working days BEFORE class starts</option>
+        </select>
+        <span class="help-hint">Based on the date student requested withdrawal in writing</span>
+      </div>
+
+      <div class="form-group">
+        <label for="payment">Payment Status (Student Statement TWRT006)</label>
+        <select id="payment" onchange="evaluateMain()">
+          <option value="plan">On an Active Payment Plan</option>
+          <option value="paid">Fully Paid</option>
+          <option value="unpaid">Unpaid / Outstanding Balance</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="level">Qualification Level</label>
+        <select id="level" onchange="evaluateMain()">
+          <option value="cert4">Statement of Attainment up to Certificate IV (Non-VSL)</option>
+          <option value="diploma">Diploma / Advanced Diploma (VSL / FEE-HELP)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- MAIN RESULT OUTPUT -->
+    <div class="card">
+      <h2>2. High-Level Recommendation</h2>
+      <div id="badgeContainer"></div>
+      
+      <div class="result-box">
+        <h3 id="resultTitle">Result</h3>
+        <p id="resultDescription"></p>
+      </div>
+
+      <div id="hotkeyBox" class="result-box" style="display:none; background: #eef2f7;">
+        <h3>CRM Standard Text / Hotkey</h3>
+        <p id="hotkeyText"></p>
+      </div>
+
+      <div id="instructionsBox">
+        <h3 style="font-size: 13px; margin-bottom: 6px;">Action Checklist:</h3>
+        <ol class="checklist" id="checklistItems"></ol>
+      </div>
+
+      <div id="bannerChatTemplate" style="display:none; margin-top: 10px;">
+        <label style="font-size: 12px; font-weight: 600;">Banner AR Webex Chat Template:</label>
+        <div class="copy-box" id="copyBoxText"></div>
+      </div>
+
+      <div id="openSplitToolPrompt" style="display:none; margin-top: 15px;">
+        <button class="btn btn-primary" onclick="openSplitAccordion()" style="width:100%;">
+          ⚡ Open CRN Code Decision Tool (Breakdown Below)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPANDABLE CRN DECISION TOOL PANEL -->
+  <div class="accordion" id="splitAccordion">
+    <div class="accordion-header" id="splitHeader" onclick="toggleSplitAccordion()">
+      <span>📑 CRN Code Decision Tool (Payment Plan Split Calculator)</span>
+      <span class="arrow-icon" id="splitArrow">▼</span>
+    </div>
+    <div class="accordion-content" id="splitContent">
+      <div class="preset-bar">
+        <span>Presets / Controls:</span>
+        <button class="btn btn-secondary btn-sm" onclick="loadScenario('caseA')">Load Case A (Retained > Paid)</button>
+        <button class="btn btn-secondary btn-sm" onclick="loadScenario('caseB')">Load Case B (Paid > Retained Surplus)</button>
+        <button class="btn btn-outline btn-sm" onclick="resetSplitPanel()" style="margin-left: auto;">✕ Clear / Reset Panel</button>
+      </div>
+
+      <div class="grid" style="margin-bottom: 15px;">
+        <!-- Payment Plan Details -->
+        <div style="background: #fafbfc; padding: 14px; border-radius: 6px; border: 1px solid var(--border);">
+          <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--primary-dark);">Payment Plan Values (from TWRT006 / Banner AR)</h3>
+          <div class="form-group">
+            <label>Total Planned Amount ($)</label>
+            <input type="number" id="ppTotalPlanned" placeholder="e.g. 930" oninput="calculateSplit()">
+          </div>
+          <div class="form-group">
+            <label>Total Amount Left to Pay / Outstanding Balance ($)</label>
+            <input type="number" id="ppOutstanding" placeholder="e.g. 372" oninput="calculateSplit()">
+          </div>
+          <div class="form-group">
+            <label>Instalment Amount ($)</label>
+            <input type="number" id="ppInstalment" placeholder="e.g. 93" oninput="calculateSplit()">
+          </div>
+        </div>
+
+        <!-- Calculated Plan Stats -->
+        <div>
+          <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--primary-dark);">Plan Realignment Overview</h3>
+          <div class="summary-grid" style="margin: 0; grid-template-columns: 1fr 1fr;">
+            <div class="summary-card">
+              <div class="label">Amount Paid to Date</div>
+              <div class="val" id="calcPaidToDate">$0.00</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Instalments Paid</div>
+              <div class="val" id="calcInstalmentsPaid">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Remaining Balance</div>
+              <div class="val" id="calcRemaining">$0.00</div>
+            </div>
+            <div class="summary-card">
+              <div class="label">Instalments Left</div>
+              <div class="val" id="calcInstalmentsLeft">0</div>
+            </div>
+          </div>
+          <div id="plannedMismatchWarning" style="display:none; margin-top: 10px;" class="alert alert-warning">
+            <strong>Note:</strong> Total of entered CRNs (<span id="warnCRNSum"></span>) does not match Total Planned Amount (<span id="warnPlanned"></span>). This usually indicates the student made an upfront deposit/payment prior to starting the payment plan.
+          </div>
+        </div>
+      </div>
+
+      <!-- CRN Table -->
+      <h3 style="font-size: 14px; margin-bottom: 6px; color: var(--primary-dark);">Enrolled CRNs & Withdrawal Selection</h3>
+      <table class="data-table" id="crnTable">
+        <thead>
+          <tr>
+            <th style="width: 140px;">CRN</th>
+            <th style="width: 140px;">Amount ($)</th>
+            <th style="width: 110px; text-align: center;">Withdraw?</th>
+            <th style="width: 130px;">Assigned Code</th>
+            <th>Notes / Reason</th>
+            <th style="width: 60px; text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="crnTableBody">
+          <!-- Dynamic Rows -->
+        </tbody>
+      </table>
+      <button class="btn btn-secondary btn-sm" onclick="addCRNRow()">+ Add Another CRN</button>
+
+      <!-- Split Results Breakdown -->
+      <div style="margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--secondary);">
+        <h3 style="color: var(--primary-dark); font-size: 16px;">Outcome & Financial Realignment</h3>
+        
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="label">Retained Units Cost</div>
+            <div class="val" id="resRetainedCost">$0.00</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">Withdrawing Units Cost</div>
+            <div class="val" id="resWithdrawnCost">$0.00</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">New Account Balance</div>
+            <div class="val" id="resNewBalance">$0.00</div>
+          </div>
+        </div>
+
+        <div id="splitAlertBox" class="alert alert-info">Enter values above or load a test scenario to see allocation details.</div>
+
+        <div id="soaholdPrompt" class="alert alert-success" style="display:none;">
+          <strong>SOAHOLD Action Required:</strong> The student account has no remaining fees due against this payment plan. You must <strong>manually lift the AH Hold</strong> in <strong>SOAHOLD</strong> by entering today's date in the "To" field (Page 13, Step 28).
+        </div>
+
+        <div id="splitWebexBox" style="display:none;">
+          <label style="font-size: 12px; font-weight: 600;">Banner AR Webex Chat Template:</label>
+          <div class="copy-box" id="splitWebexText"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Start with 2 empty rows by default
+let crnList = [
+  { crn: "", amount: "", withdraw: false },
+  { crn: "", amount: "", withdraw: false }
+];
+
+function toggleSplitAccordion() {
+  const content = document.getElementById('splitContent');
+  const arrow = document.getElementById('splitArrow');
+  const header = document.getElementById('splitHeader');
+  
+  if (content.classList.contains('open')) {
+    content.classList.remove('open');
+    arrow.classList.remove('open');
+    header.classList.remove('active');
+  } else {
+    content.classList.add('open');
+    arrow.classList.add('open');
+    header.classList.add('active');
+    calculateSplit();
+  }
+}
+
+function openSplitAccordion() {
+  const content = document.getElementById('splitContent');
+  const arrow = document.getElementById('splitArrow');
+  const header = document.getElementById('splitHeader');
+  content.classList.add('open');
+  arrow.classList.add('open');
+  header.classList.add('active');
+  document.getElementById('splitAccordion').scrollIntoView({ behavior: 'smooth' });
+  calculateSplit();
+}
+
+function renderCRNTable() {
+  const tbody = document.getElementById('crnTableBody');
+  tbody.innerHTML = '';
+
+  crnList.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" placeholder="e.g. 90123" value="${item.crn}" oninput="updateCRN(${index}, 'crn', this.value)" style="padding:4px 8px;"></td>
+      <td><input type="number" placeholder="0.00" value="${item.amount === '' ? '' : item.amount}" oninput="updateCRN(${index}, 'amount', this.value === '' ? '' : parseFloat(this.value))" style="padding:4px 8px;"></td>
+      <td style="text-align:center;">
+        <input type="checkbox" ${item.withdraw ? 'checked' : ''} onchange="updateCRN(${index}, 'withdraw', this.checked)">
+      </td>
+      <td id="codeBadge_${index}"><span class="tag">-</span></td>
+      <td id="codeReason_${index}" style="font-size:12px; color:#555;">-</td>
+      <td style="text-align:center;"><button class="btn btn-danger" onclick="removeCRNRow(${index})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateCRN(index, field, value) {
+  crnList[index][field] = value;
+  calculateSplit();
+}
+
+function addCRNRow() {
+  crnList.push({ crn: "", amount: "", withdraw: false });
+  renderCRNTable();
+  calculateSplit();
+}
+
+function removeCRNRow(index) {
+  crnList.splice(index, 1);
+  renderCRNTable();
+  calculateSplit();
+}
+
+function resetSplitPanel() {
+  crnList = [
+    { crn: "", amount: "", withdraw: false },
+    { crn: "", amount: "", withdraw: false }
+  ];
+  document.getElementById('ppTotalPlanned').value = "";
+  document.getElementById('ppOutstanding').value = "";
+  document.getElementById('ppInstalment').value = "";
+  renderCRNTable();
+  calculateSplit();
+}
+
+function loadScenario(type) {
+  if (type === 'caseA') {
+    crnList = [
+      { crn: "90123", amount: 10, withdraw: true },
+      { crn: "90234", amount: 50, withdraw: false },
+      { crn: "90345", amount: 200, withdraw: false },
+      { crn: "90456", amount: 350, withdraw: false },
+      { crn: "90567", amount: 110, withdraw: true },
+      { crn: "90678", amount: 210, withdraw: false }
+    ];
+    document.getElementById('ppTotalPlanned').value = 930;
+    document.getElementById('ppOutstanding').value = 372;
+    document.getElementById('ppInstalment').value = 93;
+  } else if (type === 'caseB') {
+    crnList = [
+      { crn: "90123", amount: 10, withdraw: true },
+      { crn: "90234", amount: 50, withdraw: false },
+      { crn: "90345", amount: 200, withdraw: true },
+      { crn: "90456", amount: 350, withdraw: false },
+      { crn: "90567", amount: 110, withdraw: true },
+      { crn: "90678", amount: 210, withdraw: false }
+    ];
+    document.getElementById('ppTotalPlanned').value = 930;
+    document.getElementById('ppOutstanding').value = 279;
+    document.getElementById('ppInstalment').value = 93;
+  }
+  renderCRNTable();
+  calculateSplit();
+}
+
+function calculateSplit() {
+  const plannedInput = document.getElementById('ppTotalPlanned').value;
+  const outstandingInput = document.getElementById('ppOutstanding').value;
+  const instalmentInput = document.getElementById('ppInstalment').value;
+
+  const planned = plannedInput === "" ? 0 : (parseFloat(plannedInput) || 0);
+  const outstanding = outstandingInput === "" ? 0 : (parseFloat(outstandingInput) || 0);
+  const instalment = instalmentInput === "" ? 0 : (parseFloat(instalmentInput) || 0);
+
+  const level = document.getElementById('level').value;
+  const targetCode = level === 'diploma' ? 'WD' : 'WA';
+
+  const paidToDate = Math.max(0, planned - outstanding);
+  const instalmentsPaid = instalment > 0 ? (paidToDate / instalment).toFixed(1).replace('.0','') : "0";
+  const instalmentsLeft = instalment > 0 ? Math.ceil(outstanding / instalment) : "0";
+
+  document.getElementById('calcPaidToDate').textContent = `$${paidToDate.toFixed(2)}`;
+  document.getElementById('calcInstalmentsPaid').textContent = instalmentsPaid;
+  document.getElementById('calcRemaining').textContent = `$${outstanding.toFixed(2)}`;
+  document.getElementById('calcInstalmentsLeft').textContent = instalmentsLeft;
+
+  // Check sum mismatch
+  const crnSum = crnList.reduce((acc, c) => acc + (typeof c.amount === 'number' ? c.amount : 0), 0);
+  const mismatchBox = document.getElementById('plannedMismatchWarning');
+  if (planned > 0 && crnSum > 0 && Math.abs(crnSum - planned) > 0.01) {
+    mismatchBox.style.display = 'block';
+    document.getElementById('warnCRNSum').textContent = `$${crnSum.toFixed(2)}`;
+    document.getElementById('warnPlanned').textContent = `$${planned.toFixed(2)}`;
+  } else {
+    mismatchBox.style.display = 'none';
+  }
+
+  // Separate retained and withdrawing
+  let retainedCost = 0;
+  let withdrawingCost = 0;
+  let hasWithdraw = false;
+
+  crnList.forEach(c => {
+    const amt = typeof c.amount === 'number' ? c.amount : 0;
+    if (c.withdraw) {
+      withdrawingCost += amt;
+      hasWithdraw = true;
+    } else {
+      retainedCost += amt;
+    }
+  });
+
+  document.getElementById('resRetainedCost').textContent = `$${retainedCost.toFixed(2)}`;
+  document.getElementById('resWithdrawnCost').textContent = `$${withdrawingCost.toFixed(2)}`;
+
+  // Allocation Logic (CIT Page 9 & 10)
+  const surplusPayment = paidToDate - retainedCost;
+  let assignedCodes = {};
+  let creditToAbsorb = 0;
+
+  if (planned === 0 && outstanding === 0 && crnSum === 0) {
+    document.getElementById('resNewBalance').textContent = "$0.00";
+    document.getElementById('splitAlertBox').className = "alert alert-info";
+    document.getElementById('splitAlertBox').textContent = "Enter values above or load a test scenario to see allocation details.";
+    document.getElementById('soaholdPrompt').style.display = 'none';
+    document.getElementById('splitWebexBox').style.display = 'none';
+    return;
+  }
+
+  if (surplusPayment <= 0) {
+    // Retained units exceed or equal amount paid
+    crnList.forEach((c, idx) => {
+      if (!c.withdraw) {
+        assignedCodes[idx] = { code: 'KEEP', badge: 'badge-wb', reason: 'Student remains enrolled' };
+      } else {
+        assignedCodes[idx] = { code: 'UN', badge: 'badge-un', reason: 'Unpaid portion. Reverses fees to remove debt.' };
+      }
+    });
+
+    const newAccountBalance = retainedCost - paidToDate;
+    document.getElementById('resNewBalance').textContent = `$${newAccountBalance.toFixed(2)}`;
+    
+    document.getElementById('splitAlertBox').className = "alert alert-info";
+    document.getElementById('splitAlertBox').innerHTML = `
+      <strong>Case Analysis (Retained Units > Paid Amount):</strong><br>
+      The $${paidToDate.toFixed(2)} paid to date is fully absorbed by the retained units ($${retainedCost.toFixed(2)}). 
+      The withdrawing units have $0 paid towards them, so all selected withdrawing units are coded as <strong>UN</strong>.<br>
+      The revised outstanding balance for the remaining subjects is <strong>$${newAccountBalance.toFixed(2)}</strong>.
+    `;
+    document.getElementById('soaholdPrompt').style.display = 'none';
+    document.getElementById('splitWebexBox').style.display = 'none';
+
+  } else {
+    // Paid amount exceeds retained units cost (Surplus exists)
+    let remainingSurplus = surplusPayment;
+    let withdrawingIndices = [];
+    crnList.forEach((c, idx) => {
+      const amt = typeof c.amount === 'number' ? c.amount : 0;
+      if (c.withdraw) withdrawingIndices.push({ idx, amount: amt });
+    });
+    withdrawingIndices.sort((a, b) => a.amount - b.amount);
+
+    let coveredIndices = new Set();
+    withdrawingIndices.forEach(item => {
+      if (item.amount <= remainingSurplus && item.amount > 0) {
+        coveredIndices.add(item.idx);
+        remainingSurplus -= item.amount;
+      }
+    });
+
+    crnList.forEach((c, idx) => {
+      const amt = typeof c.amount === 'number' ? c.amount : 0;
+      if (!c.withdraw) {
+        assignedCodes[idx] = { code: 'KEEP', badge: 'badge-wb', reason: 'Student remains enrolled' };
+      } else if (coveredIndices.has(idx)) {
+        assignedCodes[idx] = { 
+          code: targetCode, 
+          badge: targetCode === 'WA' ? 'badge-wa' : 'badge-wd', 
+          reason: `Covered by surplus payments ($${amt.toFixed(2)}). Fee retained.` 
+        };
+      } else {
+        assignedCodes[idx] = { 
+          code: 'UN', 
+          badge: 'badge-un', 
+          reason: 'Exceeds surplus payments. Reverses fee to prevent debt.' 
+        };
+      }
+    });
+
+    creditToAbsorb = remainingSurplus;
+    document.getElementById('resNewBalance').textContent = creditToAbsorb > 0 ? `-$${creditToAbsorb.toFixed(2)} (Credit)` : `$0.00`;
+
+    document.getElementById('splitAlertBox').className = "alert alert-warning";
+    document.getElementById('splitAlertBox').innerHTML = `
+      <strong>Case Analysis (Paid Amount > Retained Units):</strong><br>
+      Retained units ($${retainedCost.toFixed(2)}) are 100% paid. There is a surplus of <strong>$${surplusPayment.toFixed(2)}</strong>.<br>
+      Surplus has been applied to retain fees for units coded as <strong>${targetCode}</strong>. Uncovered dropped units are coded as <strong>UN</strong>.<br>
+      The student owes <strong>$0</strong>. No further instalments are required.
+    `;
+
+    document.getElementById('soaholdPrompt').style.display = 'block';
+    document.getElementById('splitWebexBox').style.display = 'block';
+    document.getElementById('splitWebexText').textContent = 
+      `Hi Team, CIT[ID] [Name] has withdrawn on a payment plan and is not entitled to a refund. Can you please absorb the $${creditToAbsorb.toFixed(2)} credit and cancel the remaining payment plan.`;
+  }
+
+  // Update Table Row Badges
+  crnList.forEach((c, idx) => {
+    const badgeEl = document.getElementById(`codeBadge_${idx}`);
+    const reasonEl = document.getElementById(`codeReason_${idx}`);
+    if (badgeEl && assignedCodes[idx]) {
+      const item = assignedCodes[idx];
+      badgeEl.innerHTML = `<span class="badge ${item.badge}" style="margin:0; font-size:11px;">${item.code}</span>`;
+      reasonEl.textContent = item.reason;
+    }
+  });
+}
+
+function evaluateMain() {
+  const cohort = document.getElementById('cohort').value;
+  const actionType = document.getElementById('actionType').value;
+  const grades = document.getElementById('grades').value;
+  const timing = document.getElementById('timing').value;
+  const payment = document.getElementById('payment').value;
+  const level = document.getElementById('level').value;
+
+  const badgeContainer = document.getElementById('badgeContainer');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultDescription = document.getElementById('resultDescription');
+  const hotkeyBox = document.getElementById('hotkeyBox');
+  const hotkeyText = document.getElementById('hotkeyText');
+  const checklist = document.getElementById('checklistItems');
+  const openSplitToolPrompt = document.getElementById('openSplitToolPrompt');
+  const bannerChatTemplate = document.getElementById('bannerChatTemplate');
+  const copyBoxText = document.getElementById('copyBoxText');
+
+  hotkeyBox.style.display = 'none';
+  openSplitToolPrompt.style.display = 'none';
+  bannerChatTemplate.style.display = 'none';
+  checklist.innerHTML = '';
+
+  const isApprentice = cohort === 'apprentice';
+
+  // 1. HARD STOP: CIT International
+  if (cohort === 'international') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">STOP: International Student</span>';
+    resultTitle.textContent = 'Do not process via domestic form';
+    resultDescription.textContent = 'CIT International students cannot withdraw using standard domestic processes. They must complete the withdrawal form on the CIT International website or email isadvisors@cit.edu.au.';
+    checklist.innerHTML = `
+      <li>Do not update registration codes in SFAREGS.</li>
+      <li>Forward withdrawal enquiry/incident to CIT International Advisors via <span class="tag">isadvisors@cit.edu.au</span>.</li>
+    `;
+    return;
+  }
+
+  // 2. HARD STOP: Fee Free TAFE / Skilled Capital
+  if (cohort === 'fft_sc') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">STOP: Reassign to FFT Processing</span>';
+    resultTitle.textContent = 'Do not action in Student Services (Code: US)';
+    resultDescription.textContent = 'Fee Free TAFE and Skilled Capital withdrawals must be processed directly by the FFT/Skilled Capital team to notify departments and update AVETARS. Code "US" is used exclusively by them.';
+    checklist.innerHTML = `
+      <li>Reassign CRM incident to the <strong>'FFT Processing'</strong> contact record.</li>
+      <li>No Banner registration changes are required by Student Services staff.</li>
+    `;
+    return;
+  }
+
+  // 3. Class Swap or Error Fix
+  if (actionType === 'class_swap' || actionType === 'admin_fix') {
+    badgeContainer.innerHTML = '<span class="badge badge-ef">Banner Code: EF</span>';
+    resultTitle.textContent = 'Error Fix / Admin Change';
+    resultDescription.textContent = 'Used for class time swap (same subject) or admin CRN correction. Reverses fees and allows re-enrolment.';
+    checklist.innerHTML = `
+      <li>Open <span class="tag">SFAREGS</span> and update CRN status to <span class="tag">EF</span>.</li>
+      <li>Save (F10) until "Fee Assessment processed" message appears.</li>
+      <li>Open <span class="tag">TSASPAY</span> > Related > View Account Detail (<span class="tag">TSAAREV</span>).</li>
+      <li>Click Tools > <strong>Apply Transactions</strong>, then close.</li>
+      <li>Re-enrol student into the new CRN.</li>
+    `;
+    return;
+  }
+
+  // 4. Grades Check - Positive Grade Waiting to be rolled
+  if (grades === 'positive_unrolled') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">STOP: Positive Grade Not Rolled</span>';
+    resultTitle.textContent = 'Do not withdraw student';
+    resultDescription.textContent = 'There is a UP grade in SFARHST/SFASLST with the rolled checkmark (✓) missing. The subject will not appear on official results if withdrawn now.';
+    checklist.innerHTML = `
+      <li>Contact the teaching department immediately and request them to roll the grades.</li>
+      <li>Do not withdraw the student while positive grades are waiting to be rolled.</li>
+      <li>Re-check SFARHST once the department confirms grades are rolled before taking further action.</li>
+    `;
+    return;
+  }
+
+  // 5. Grades Check - Positive Grade Rolled
+  if (grades === 'positive_rolled') {
+    badgeContainer.innerHTML = '<span class="badge badge-stop">NO WITHDRAWAL: Subject Completed</span>';
+    resultTitle.textContent = 'Positive Grade Rolled (UP)';
+    resultDescription.textContent = 'Student has completed assessment and the teacher has awarded a positive grade. The student cannot be withdrawn from this CRN.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Processed (Positive Grades)</strong> / Hotkey: <span class="tag">WPPG</span>';
+    
+    if (payment === 'unpaid') {
+      checklist.innerHTML = `
+        <li>Do not withdraw in Banner.</li>
+        <li>Place an Academic Hold (<span class="tag">AH</span>) on the student account.</li>
+        <li>Student remains liable for fees for this subject.</li>
+        <li>Respond in CRM using hotkey <span class="tag">WPPG</span>.</li>
+      `;
+    } else {
+      checklist.innerHTML = `
+        <li>Do not withdraw in Banner. Student retains grade.</li>
+        <li>Respond in CRM explaining that the subject was completed and grade is finalized.</li>
+      `;
+    }
+    return;
+  }
+
+  // 6. Early Withdrawal: >= 10 Days Before OR Before Invoice/Census Date
+  if (timing === '10plus_or_before_due') {
+    badgeContainer.innerHTML = '<span class="badge badge-wb">Banner Code: WB (100% Refund)</span>';
+    resultTitle.textContent = 'Withdraw BEFORE Due Date / 10+ Days Before Start';
+    resultDescription.textContent = 'Reverses subject fees and removes the subject from the timetable. 100% fee reversal applies.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, 10+ Days Before</strong> / Hotkey: <span class="tag">WB</span>';
+    checklist.innerHTML = `
+      <li>Open <span class="tag">SFAREGS</span> and change CRN status to <span class="tag">WB</span>.</li>
+      <li>Save (F10) until "Fee Assessment processed" appears.</li>
+      <li>Open <span class="tag">TSASPAY</span> > Related > View Account Detail (<span class="tag">TSAAREV</span>).</li>
+      <li>Click Tools > <strong>Apply Transactions</strong>, then close.</li>
+      <li>Refresh student statement in Chrome to confirm 100% fee reversal.</li>
+      <li>Respond in CRM using standard text hotkey <span class="tag">WB</span>.</li>
+      ${isApprentice ? '<li><strong>Apprentice:</strong> Add private note hotkey <span class="tag">WPA</span> and reassign CRM incident to <strong>CIT Apprenticeships and Traineeships</strong>.</li>' : ''}
+    `;
+    return;
+  }
+
+  // 7. Early Withdrawal: Within 10 working days BEFORE commencement
+  if (timing === 'within_10_days') {
+    badgeContainer.innerHTML = '<span class="badge badge-wb" style="background:#e07a1f;">Banner Code: WB (50% Refund Adjustment)</span>';
+    resultTitle.textContent = 'Withdraw within 10 Days Before Start';
+    resultDescription.textContent = 'Student is WB\'d in SFAREGS. Under the 2025 Fee Policy, student is eligible for a 50% refund/credit. Banner AR must manually adjust the fee reversal by 50%.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Within 10 Days</strong> / Hotkey: <span class="tag">WW10</span>';
+    bannerChatTemplate.style.display = 'block';
+    copyBoxText.textContent = "Hi Team, can you please adjust the fee reversal by 50% as student CIT[ID] [Name] has withdrawn within 10 working days of class commencement.";
+    checklist.innerHTML = `
+      <li>Process code <span class="tag">WB</span> in <span class="tag">SFAREGS</span>.</li>
+      <li>Save (F10) until "Fee Assessment processed" appears.</li>
+      <li>Run <span class="tag">TSASPAY</span> > <span class="tag">TSAAREV</span> > Apply Transactions.</li>
+      <li>Post in the <strong>Finance and Student Services Webex chat</strong> (or reassign CRM incident to Banner AR) requesting manual 50% adjustment using template below.</li>
+      <li>Action refund in CRM if applicable (refer to 'Processing Refunds Procedure').</li>
+      <li>Respond in CRM using standard text hotkey <span class="tag">WW10</span>.</li>
+      ${isApprentice ? '<li><strong>Apprentice:</strong> Add private note hotkey <span class="tag">WPA</span> and reassign CRM incident to CAT team.</li>' : ''}
+    `;
+    return;
+  }
+
+  // 8. AFTER Due Date & Commenced: UNPAID
+  if (timing === 'after_due_commenced' && payment === 'unpaid') {
+    badgeContainer.innerHTML = '<span class="badge badge-un">Banner Code: UN</span>';
+    resultTitle.textContent = 'Un-Enrolment (After Due Date - Unpaid)';
+    resultDescription.textContent = 'Enrolment cancellation to remove fees and return student account to a $0 balance.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Processed (After FDD Unpaid)</strong> / Hotkey: <span class="tag">WUN</span>';
+    checklist.innerHTML = `
+      <li>Check for active Accounts Receivable (<span class="tag">AR</span>) hold. If present, request Banner AR lift hold via Webex chat.</li>
+      <li>In <span class="tag">SFAREGS</span>, set status to <span class="tag">UN</span> for commenced unpaid CRNs (use <span class="tag">WB</span> for any future CRNs 10+ days away).</li>
+      <li>Save (F10) and Apply Transactions in <span class="tag">TSAAREV</span>.</li>
+      <li>Refresh student statement in Chrome to confirm balance is $0.</li>
+      <li>Respond in CRM using standard text hotkey <span class="tag">WUN</span>.</li>
+      ${isApprentice ? '<li><strong>Apprentice:</strong> Add private note hotkey <span class="tag">WPA</span> and reassign to CAT team.</li>' : ''}
+    `;
+    return;
+  }
+
+  // 9. AFTER Due Date & Commenced: PAID IN FULL
+  if (timing === 'after_due_commenced' && payment === 'paid') {
+    const code = level === 'cert4' ? 'WA' : 'WD';
+    badgeContainer.innerHTML = `<span class="badge ${level === 'cert4' ? 'badge-wa' : 'badge-wd'}">Banner Code: ${code}</span>`;
+    resultTitle.textContent = `Withdraw AFTER Due Date (Paid - ${code})`;
+    resultDescription.textContent = level === 'cert4' 
+      ? 'Fully paid CRN up to Certificate IV. Does NOT reverse subject fees and does not remove subject from timetable.' 
+      : 'Diploma and above (VSL / FEE-HELP). Must use WD to avoid compliance reporting errors. Does NOT reverse fees/loans.';
+    
+    checklist.innerHTML = `
+      <li>Check for active Accounts Receivable (<span class="tag">AR</span>) hold. If present, request Banner AR lift hold via Webex chat.</li>
+      <li>In <span class="tag">SFAREGS</span>, change CRN status to <span class="tag">${code}</span>.</li>
+      <li>Save (F10) and Apply Transactions in <span class="tag">TSAAREV</span>.</li>
+      <li>Verify statement: fees remain paid/payable with no reversal.</li>
+      <li>Advise student in CRM that fees are non-refundable after census/due date, but they may submit a Fee Re-credit/Refund request with supporting evidence.</li>
+      ${isApprentice ? '<li><strong>Apprentice:</strong> Add private note hotkey <span class="tag">WPA</span> and reassign to CAT team.</li>' : ''}
+    `;
+    return;
+  }
+
+  // 10. AFTER Due Date & Commenced: PAYMENT PLAN
+  if (timing === 'after_due_commenced' && payment === 'plan') {
+    badgeContainer.innerHTML = '<span class="badge badge-un">Banner Code: Split (WA/WD + UN)</span>';
+    resultTitle.textContent = 'Partial / Full Withdrawal on Active Payment Plan';
+    resultDescription.textContent = 'Payments made are credited against retained units first. Units covered by surplus payments are WA/WD, while remaining uncovered units are UN.';
+    hotkeyBox.style.display = 'block';
+    hotkeyText.innerHTML = 'Standard Text: <strong>Withdrawal, Processed (Partial w/ PP)</strong> / Hotkey: <span class="tag">WPP</span>';
+    openSplitToolPrompt.style.display = 'block';
+    checklist.innerHTML = `
+      <li>Open the <strong>CRN Code Decision Tool</strong> panel below to calculate exact per-CRN codes and balance outcomes.</li>
+      <li>Request Banner AR lift any active Accounts Receivable (<span class="tag">AR</span>) hold via Webex chat if present.</li>
+      <li>In <span class="tag">SFAREGS</span>, set each withdrawing CRN to its calculated code (<span class="tag">UN</span> or <span class="tag">WA</span>/<span class="tag">WD</span>).</li>
+      <li>Run <span class="tag">TSASPAY</span> > <span class="tag">TSAAREV</span> > Apply Transactions.</li>
+      <li>Contact Banner AR via Webex chat to reverse current payment plan and realign/cancel as calculated.</li>
+      <li><strong>If new balance is $0:</strong> Manually lift the <span class="tag">AH Hold</span> in <span class="tag">SOAHOLD</span> by entering today's date in 'To' field (Page 13, Step 28).</li>
+      <li>Send CRM standard text using hotkey <span class="tag">WPP</span>.</li>
+      ${isApprentice ? '<li><strong>Apprentice:</strong> Add private note hotkey <span class="tag">WPA</span> and reassign CRM incident to CAT team.</li>' : ''}
+    `;
+    return;
+  }
+
+  calculateSplit();
+}
+
+// Initial setup on load
+renderCRNTable();
+evaluateMain();
+</script>
+
+</body>
+</html>
